@@ -826,6 +826,8 @@ fn turn_metadata_skips_tool_result_messages() {
             content: "pub fn sample() {}".to_string(),
             is_error: None,
             content_blocks: None,
+            tool_name: None,
+            spillover_path: None,
         }],
     });
 
@@ -882,6 +884,8 @@ fn turn_metadata_skips_when_only_tool_results_trail() {
             content: "pub fn sample() {}".to_string(),
             is_error: None,
             content_blocks: None,
+            tool_name: None,
+            spillover_path: None,
         }],
     });
 

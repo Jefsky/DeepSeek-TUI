@@ -93,6 +93,15 @@ pub(crate) fn set_test_spillover_root(root: Option<PathBuf>) -> Option<PathBuf> 
     std::mem::replace(&mut *guard, root)
 }
 
+/// Read `metadata.spillover_path` as a string for session persistence (#1216).
+#[must_use]
+pub fn spillover_path_string_from_metadata(metadata: Option<&serde_json::Value>) -> Option<String> {
+    metadata
+        .and_then(|m| m.get("spillover_path"))
+        .and_then(serde_json::Value::as_str)
+        .map(std::string::ToString::to_string)
+}
+
 /// Resolve the spillover-file path for a tool call id. Sanitises the
 /// id so that a hostile value can't escape the storage directory.
 /// Returns `None` for empty / fully-invalid ids; the caller should

@@ -1067,6 +1067,8 @@ mod tests {
                 content: "Changed src/compaction.rs".to_string(),
                 is_error: None,
                 content_blocks: None,
+                tool_name: None,
+                spillover_path: None,
             }],
         };
 

@@ -3097,6 +3097,8 @@ async fn run_subagent(
                 content: result,
                 is_error: None,
                 content_blocks: None,
+                tool_name: Some(tool_name.clone()),
+                spillover_path: None,
             });
         }
 

@@ -108,6 +108,8 @@ fn tool_result_message(tool_use_id: &str, content: &str) -> Message {
             content: content.to_string(),
             is_error: None,
             content_blocks: None,
+            tool_name: None,
+            spillover_path: None,
         }],
     }
 }

@@ -1648,6 +1648,9 @@ impl Engine {
                                 .await;
                         }
 
+                        let spill = crate::tools::truncate::spillover_path_string_from_metadata(
+                            output.metadata.as_ref(),
+                        );
                         self.add_session_message(Message {
                             role: "user".to_string(),
                             content: vec![ContentBlock::ToolResult {
@@ -1655,6 +1658,8 @@ impl Engine {
                                 content: output_for_context,
                                 is_error: None,
                                 content_blocks: None,
+                                tool_name: Some(outcome.name.clone()),
+                                spillover_path: spill,
                             }],
                         })
                         .await;
@@ -1697,6 +1702,8 @@ impl Engine {
                                 content: format!("Error: {error}"),
                                 is_error: Some(true),
                                 content_blocks: None,
+                                tool_name: Some(outcome.name.clone()),
+                                spillover_path: None,
                             }],
                         })
                         .await;

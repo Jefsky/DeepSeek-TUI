@@ -577,6 +577,8 @@ impl Engine {
                 content: verification_note.clone(),
                 is_error: None,
                 content_blocks: None,
+                tool_name: Some(candidate.name.clone()),
+                spillover_path: None,
             }],
         })
         .await;

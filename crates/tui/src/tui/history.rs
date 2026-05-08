@@ -571,6 +571,30 @@ pub fn history_cells_from_message(msg: &Message) -> Vec<HistoryCell> {
                     });
                 }
             }
+            ContentBlock::ToolResult {
+                content,
+                is_error,
+                tool_name,
+                spillover_path,
+                ..
+            } if msg.role == "user" => {
+                let name = tool_name
+                    .as_ref()
+                    .map_or_else(|| "tool".to_string(), |s| s.clone());
+                let status = if *is_error == Some(true) {
+                    ToolStatus::Failed
+                } else {
+                    ToolStatus::Success
+                };
+                cells.push(HistoryCell::Tool(ToolCell::Generic(GenericToolCell {
+                    name,
+                    status,
+                    input_summary: None,
+                    output: Some(content.clone()),
+                    prompts: None,
+                    spillover_path: spillover_path.as_ref().map(PathBuf::from),
+                })));
+            }
             _ => {}
         }
     }
@@ -3508,6 +3532,30 @@ mod tests {
         let text = "Line one\nLine two";
         let summary = extract_reasoning_summary(text).expect("summary should exist");
         assert_eq!(summary, "Line one\nLine two");
+    }
+
+    #[test]
+    fn user_tool_result_block_renders_generic_cell_with_spillover_path() {
+        let spill = "/tmp/test-spill.txt".to_string();
+        let msg = Message {
+            role: "user".to_string(),
+            content: vec![ContentBlock::ToolResult {
+                tool_use_id: "tu-1".to_string(),
+                content: "truncated…".to_string(),
+                is_error: None,
+                content_blocks: None,
+                tool_name: Some("exec_shell".to_string()),
+                spillover_path: Some(spill.clone()),
+            }],
+        };
+        let cells = super::history_cells_from_message(&msg);
+        assert_eq!(cells.len(), 1);
+        let HistoryCell::Tool(ToolCell::Generic(g)) = &cells[0] else {
+            panic!("expected generic tool cell");
+        };
+        assert_eq!(g.name, "exec_shell");
+        assert_eq!(g.output.as_deref(), Some("truncated…"));
+        assert_eq!(g.spillover_path, Some(std::path::PathBuf::from(&spill)));
     }
 
     #[test]

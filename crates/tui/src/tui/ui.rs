@@ -823,13 +823,20 @@ async fn run_event_loop(
                             ),
                             Err(err) => sanitize_stream_chunk(&format!("Error: {err}")),
                         };
+                        let spillover_path = result.as_ref().ok().and_then(|output| {
+                            crate::tools::truncate::spillover_path_string_from_metadata(
+                                output.metadata.as_ref(),
+                            )
+                        });
                         app.api_messages.push(Message {
                             role: "user".to_string(),
                             content: vec![ContentBlock::ToolResult {
                                 tool_use_id: id.clone(),
                                 content: tool_content,
-                                is_error: None,
+                                is_error: result.as_ref().err().map(|_| true),
                                 content_blocks: None,
+                                tool_name: Some(name.clone()),
+                                spillover_path,
                             }],
                         });
                         handle_tool_call_complete(app, &id, &name, &result);

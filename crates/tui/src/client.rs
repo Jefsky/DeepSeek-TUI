@@ -1153,6 +1153,8 @@ mod tests {
                     content: "2026-04-23".to_string(),
                     is_error: None,
                     content_blocks: None,
+                    tool_name: None,
+                    spillover_path: None,
                 }],
             },
         ];
@@ -1204,6 +1206,8 @@ mod tests {
                     content: "2026-04-23".to_string(),
                     is_error: None,
                     content_blocks: None,
+                    tool_name: None,
+                    spillover_path: None,
                 }],
             },
             Message {
@@ -1306,6 +1310,8 @@ mod tests {
                         content: "workspace manifest".to_string(),
                         is_error: None,
                         content_blocks: None,
+                        tool_name: None,
+                        spillover_path: None,
                     }],
                 },
             ],
@@ -1668,6 +1674,8 @@ mod tests {
                 content: "ok".to_string(),
                 is_error: None,
                 content_blocks: None,
+                tool_name: None,
+                spillover_path: None,
             }],
         }];
 
@@ -1702,6 +1710,8 @@ mod tests {
                     content: "ok".to_string(),
                     is_error: None,
                     content_blocks: None,
+                    tool_name: None,
+                    spillover_path: None,
                 }],
             },
         ];
@@ -1742,6 +1752,8 @@ mod tests {
                     content: "ok".to_string(),
                     is_error: None,
                     content_blocks: None,
+                    tool_name: None,
+                    spillover_path: None,
                 }],
             },
         ];
@@ -1831,6 +1843,8 @@ mod tests {
                     content: "files".to_string(),
                     is_error: None,
                     content_blocks: None,
+                    tool_name: None,
+                    spillover_path: None,
                 }],
             },
         ];
@@ -1884,6 +1898,8 @@ mod tests {
                     content: "content a".to_string(),
                     is_error: None,
                     content_blocks: None,
+                    tool_name: None,
+                    spillover_path: None,
                 }],
             },
             Message {
@@ -1893,6 +1909,8 @@ mod tests {
                     content: "content b".to_string(),
                     is_error: None,
                     content_blocks: None,
+                    tool_name: None,
+                    spillover_path: None,
                 }],
             },
             // No result for t3

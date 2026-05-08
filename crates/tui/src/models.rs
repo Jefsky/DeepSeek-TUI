@@ -99,6 +99,14 @@ pub enum ContentBlock {
         is_error: Option<bool>,
         #[serde(skip_serializing_if = "Option::is_none")]
         content_blocks: Option<Vec<serde_json::Value>>,
+        /// Filled when persisting sessions / engine context so reload can
+        /// render the right tool card without scanning assistant `tool_use`
+        /// blocks (#1216).
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        tool_name: Option<String>,
+        /// Full-output spillover file written by `tools::truncate` (#422/#1216).
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        spillover_path: Option<String>,
     },
     #[serde(rename = "server_tool_use")]
     ServerToolUse {

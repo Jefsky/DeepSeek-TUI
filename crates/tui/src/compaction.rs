@@ -1491,6 +1491,8 @@ mod tests {
                 content: content.to_string(),
                 is_error: None,
                 content_blocks: None,
+                tool_name: None,
+                spillover_path: None,
             }],
         }
     }
@@ -1749,6 +1751,8 @@ mod tests {
                     content: "manifest".to_string(),
                     is_error: None,
                     content_blocks: None,
+                    tool_name: None,
+                    spillover_path: None,
                 }],
             },
         ];
@@ -1917,6 +1921,8 @@ mod tests {
                     content: "ok src/main.rs".to_string(),
                     is_error: None,
                     content_blocks: None,
+                    tool_name: None,
+                    spillover_path: None,
                 }],
             },
         ];
@@ -1991,6 +1997,8 @@ mod tests {
                     content: "ok".to_string(),
                     is_error: None,
                     content_blocks: None,
+                    tool_name: None,
+                    spillover_path: None,
                 }],
             },
             msg("assistant", "recent"),
@@ -2028,6 +2036,8 @@ mod tests {
                     content: "files here".to_string(),
                     is_error: None,
                     content_blocks: None,
+                    tool_name: None,
+                    spillover_path: None,
                 }],
             },
             msg("assistant", "done"),
@@ -2072,6 +2082,8 @@ mod tests {
                     content: "content of a.rs".to_string(),
                     is_error: None,
                     content_blocks: None,
+                    tool_name: None,
+                    spillover_path: None,
                 }],
             },
             Message {
@@ -2081,6 +2093,8 @@ mod tests {
                     content: "content of b.rs".to_string(),
                     is_error: None,
                     content_blocks: None,
+                    tool_name: None,
+                    spillover_path: None,
                 }],
             },
             msg("assistant", "done"),
@@ -2139,6 +2153,8 @@ mod tests {
                     content: "ok".to_string(),
                     is_error: None,
                     content_blocks: None,
+                    tool_name: None,
+                    spillover_path: None,
                 }],
             },
             // Note: NO result for "orphan" exists anywhere
@@ -2182,6 +2198,8 @@ mod tests {
                     content: format!("result {i}"),
                     is_error: None,
                     content_blocks: None,
+                    tool_name: None,
+                    spillover_path: None,
                 }],
             });
         }
@@ -2349,6 +2367,8 @@ mod tests {
                     content: "Patch applied successfully".to_string(),
                     is_error: None,
                     content_blocks: None,
+                    tool_name: None,
+                    spillover_path: None,
                 }],
             },
             msg("assistant", "more chat"),
