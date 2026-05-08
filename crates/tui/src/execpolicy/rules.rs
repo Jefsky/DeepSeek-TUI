@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use super::matcher::pattern_matches;
 use crate::command_safety::prefix_allow_matches;
@@ -16,13 +16,13 @@ pub enum ExecPolicyDecision {
     AskUser(String),
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ExecPolicyConfig {
     #[serde(default)]
     pub rules: BTreeMap<String, RuleSet>,
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct RuleSet {
     #[serde(default)]
     pub allow: Vec<String>,

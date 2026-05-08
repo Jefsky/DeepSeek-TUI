@@ -38,6 +38,7 @@ use crate::core::coherence::CoherenceState;
 use crate::core::engine::{EngineConfig, EngineHandle, spawn_engine};
 use crate::core::events::Event as EngineEvent;
 use crate::core::ops::Op;
+use crate::features::Feature;
 use crate::hooks::HookEvent;
 use crate::models::{ContentBlock, Message, SystemPrompt, context_window_for_model};
 use crate::palette;
@@ -5411,7 +5412,35 @@ async fn handle_view_events(
 
                 match decision {
                     ReviewDecision::Approved | ReviewDecision::ApprovedForSession => {
-                        let _ = engine_handle.approve_tool_call(tool_id).await;
+                        let _ = engine_handle.approve_tool_call(tool_id.clone()).await;
+                        if matches!(decision, ReviewDecision::ApprovedForSession)
+                            && tool_name == "exec_shell"
+                            && config.features().enabled(Feature::ExecPolicy)
+                            && !timed_out
+                        {
+                            let cmd = app
+                                .pending_tool_uses
+                                .iter()
+                                .find(|(id, _, _)| id == &tool_id)
+                                .and_then(|(_, _, input)| {
+                                    input.get("command").and_then(|v| v.as_str())
+                                });
+                            if let Some(cmd) = cmd {
+                                match crate::execpolicy::persist_session_approved_shell_command(cmd)
+                                {
+                                    Ok(Some(pattern)) => {
+                                        app.status_message = Some(format!(
+                                            "Saved execpolicy allow rule for `{pattern}` (~/.deepseek/execpolicy.toml)"
+                                        ));
+                                    }
+                                    Ok(None) => {}
+                                    Err(err) => {
+                                        app.status_message =
+                                            Some(format!("Could not save execpolicy rule: {err}"));
+                                    }
+                                }
+                            }
+                        }
                     }
                     ReviewDecision::Denied | ReviewDecision::Abort => {
                         // Cache the denial so the model retry-loop doesn't
