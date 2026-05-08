@@ -161,7 +161,16 @@ mod tests {
     use super::*;
     use std::fs;
     use std::process::Command;
+    use std::sync::OnceLock;
     use tempfile::tempdir;
+    use tokio::sync::Mutex;
+
+    /// Serializes nested `cargo test` subprocesses from these integration tests.
+    static RUN_TESTS_TOOL_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
+    fn run_tests_tool_lock() -> &'static Mutex<()> {
+        RUN_TESTS_TOOL_LOCK.get_or_init(|| Mutex::new(()))
+    }
 
     fn cargo_available() -> bool {
         Command::new("cargo")
@@ -196,6 +205,7 @@ mod tests {
         if !cargo_available() {
             return;
         }
+        let _guard = run_tests_tool_lock().lock().await;
         let tmp = tempdir().expect("tempdir");
         let project_dir = init_cargo_project(tmp.path());
 
@@ -206,7 +216,11 @@ mod tests {
 
         let parsed: RunTestsOutput =
             serde_json::from_str(&result.content).expect("tool result should be json");
-        assert!(parsed.success);
+        assert!(
+            parsed.success,
+            "cargo test should pass on a fresh cargo init --lib project (stdout={}, stderr={})",
+            parsed.stdout, parsed.stderr
+        );
         assert_eq!(parsed.exit_code, 0);
         assert!(parsed.command.contains("cargo test"));
     }
@@ -216,9 +230,9 @@ mod tests {
         if !cargo_available() {
             return;
         }
+        let _guard = run_tests_tool_lock().lock().await;
         let tmp = tempdir().expect("tempdir");
         let project_dir = init_cargo_project(tmp.path());
-
         let lib_rs = project_dir.join("src/lib.rs");
         let failing = r#"
 pub fn add(a: i32, b: i32) -> i32 { a + b }
