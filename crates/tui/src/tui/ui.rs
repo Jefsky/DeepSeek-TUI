@@ -6652,7 +6652,8 @@ fn render_footer_from(
     for item in items {
         let chip = match *item {
             S::ContextPercent => footer_context_percent_spans(app),
-            S::GitBranch | S::LastToolElapsed | S::RateLimit => Vec::new(),
+            S::GitBranch => footer_git_branch_spans(app),
+            S::LastToolElapsed | S::RateLimit => Vec::new(),
             _ => continue,
         };
         if chip.is_empty() {
@@ -6693,6 +6694,21 @@ fn footer_context_percent_spans(app: &App) -> Vec<Span<'static>> {
     vec![Span::styled(
         format!("active ctx {percent:.0}%"),
         Style::default().fg(color),
+    )]
+}
+
+/// Spans for the current git branch (footer statusline chip). Uses
+/// [`workspace_git_branch`] — same source as workspace context for the model.
+fn footer_git_branch_spans(app: &App) -> Vec<Span<'static>> {
+    let Some(branch) = workspace_git_branch(app.workspace.as_path()) else {
+        return Vec::new();
+    };
+    if branch.is_empty() {
+        return Vec::new();
+    }
+    vec![Span::styled(
+        branch,
+        Style::default().fg(palette::TEXT_MUTED),
     )]
 }
 

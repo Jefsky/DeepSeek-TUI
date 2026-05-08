@@ -4,6 +4,7 @@
 //! instructions and context to the AI agent. These include:
 //!
 //! - `AGENTS.md` - Project-level agent instructions (primary)
+//! - `~/.deepseek/AGENTS.md` - Optional user-global instructions; merged with or used as fallback for project context (#1157)
 //! - `.claude/instructions.md` - Claude-style hidden instructions
 //! - `CLAUDE.md` - Claude-style instructions
 //! - `.deepseek/instructions.md` - Hidden instructions file (legacy)
@@ -26,6 +27,48 @@ const PROJECT_CONTEXT_FILES: &[&str] = &[
 
 /// Maximum size for project context files (to prevent loading huge files)
 const MAX_CONTEXT_SIZE: usize = 100 * 1024; // 100KB
+
+/// Maximum total size when merging global + local instruction files.
+const MAX_MERGED_CONTEXT_SIZE: usize = 200 * 1024; // 200KB
+
+/// Optional user-global instructions (`~/.deepseek/AGENTS.md`).
+fn global_agents_md_path() -> Option<PathBuf> {
+    let home = dirs::home_dir()?;
+    let path = home.join(".deepseek").join("AGENTS.md");
+    if path.is_file() { Some(path) } else { None }
+}
+
+/// When `~/.deepseek/AGENTS.md` exists: merge before local content (separator), or use as fallback if no project file.
+fn merge_global_agents_md(ctx: &mut ProjectContext) {
+    let Some(global_path) = global_agents_md_path() else {
+        return;
+    };
+    match load_context_file(&global_path) {
+        Ok(global_text) => {
+            if let Some(local) = ctx.instructions.take() {
+                let merged = format!("{global_text}\n\n---\n\n{local}");
+                if merged.len() > MAX_MERGED_CONTEXT_SIZE {
+                    ctx.instructions = Some(local);
+                    ctx.warnings.push(format!(
+                        "Skipped merging {}: combined instructions would exceed {} bytes",
+                        global_path.display(),
+                        MAX_MERGED_CONTEXT_SIZE
+                    ));
+                    return;
+                }
+                ctx.instructions = Some(merged);
+                ctx.warnings.push(format!(
+                    "Merged global instructions from {}",
+                    global_path.display()
+                ));
+            } else {
+                ctx.instructions = Some(global_text);
+                ctx.source_path = Some(global_path);
+            }
+        }
+        Err(e) => ctx.warnings.push(e.to_string()),
+    }
+}
 
 // === Errors ===
 
@@ -152,6 +195,7 @@ pub fn load_project_context_with_parents(workspace: &Path) -> ProjectContext {
         }
     }
 
+    merge_global_agents_md(&mut ctx);
     ctx
 }
 
@@ -289,7 +333,11 @@ pub fn merge_contexts(contexts: &[ProjectContext]) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
     use tempfile::tempdir;
+
+    #[cfg(unix)]
+    static GLOBAL_AGENTS_TEST_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn test_load_project_context_empty() {
@@ -472,5 +520,65 @@ mod tests {
                 .unwrap()
                 .contains("Organization instructions")
         );
+    }
+
+    /// `dirs::home_dir()` uses `$HOME` on Unix; keep these tests unix-only.
+    #[cfg(unix)]
+    #[test]
+    fn test_global_agents_fallback_when_no_project_file() {
+        let _guard = GLOBAL_AGENTS_TEST_LOCK.lock().expect("env test lock");
+        let tmp = tempdir().expect("tempdir");
+        let home = tmp.path();
+        let deepseek = home.join(".deepseek");
+        fs::create_dir_all(&deepseek).expect("mkdir");
+        fs::write(deepseek.join("AGENTS.md"), "Global only").expect("write");
+
+        let old_home = std::env::var_os("HOME");
+        unsafe {
+            std::env::set_var("HOME", home);
+        }
+        let workspace = tmp.path().join("proj");
+        fs::create_dir(&workspace).expect("mkdir proj");
+        let ctx = load_project_context_with_parents(&workspace);
+        unsafe {
+            if let Some(h) = old_home {
+                std::env::set_var("HOME", h);
+            } else {
+                std::env::remove_var("HOME");
+            }
+        }
+
+        assert!(ctx.has_instructions());
+        assert_eq!(ctx.instructions.as_deref(), Some("Global only"));
+        assert_eq!(ctx.source_path, Some(deepseek.join("AGENTS.md")));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_global_agents_merged_when_project_agents_exists() {
+        let _guard = GLOBAL_AGENTS_TEST_LOCK.lock().expect("env test lock");
+        let tmp = tempdir().expect("tempdir");
+        let home = tmp.path();
+        let deepseek = home.join(".deepseek");
+        fs::create_dir_all(&deepseek).expect("mkdir");
+        fs::write(deepseek.join("AGENTS.md"), "GLOBAL").expect("write global");
+
+        let old_home = std::env::var_os("HOME");
+        unsafe {
+            std::env::set_var("HOME", home);
+        }
+        fs::write(tmp.path().join("AGENTS.md"), "LOCAL").expect("write local");
+        let ctx = load_project_context_with_parents(tmp.path());
+        unsafe {
+            if let Some(h) = old_home {
+                std::env::set_var("HOME", h);
+            } else {
+                std::env::remove_var("HOME");
+            }
+        }
+
+        let text = ctx.instructions.as_deref().expect("instructions");
+        assert!(text.contains("GLOBAL") && text.contains("LOCAL"), "{text}");
+        assert!(ctx.warnings.iter().any(|w| w.contains("Merged global")));
     }
 }

@@ -346,7 +346,7 @@ fn validate_base_url_security(base_url: &str) -> Result<()> {
 
     if base_url.starts_with("http://") {
         anyhow::bail!(
-            "Refusing insecure base URL '{}'. Use HTTPS or set {}=1 to override for trusted environments.",
+            "Refusing insecure base URL '{}'. Use HTTPS, or set the environment variable {}=1 to override for trusted environments.",
             base_url,
             ALLOW_INSECURE_HTTP_ENV
         );
@@ -2188,6 +2188,11 @@ mod tests {
         let err = validate_base_url_security("http://api.deepseek.com")
             .expect_err("non-local insecure HTTP should be rejected");
         assert!(err.to_string().contains("Refusing insecure base URL"));
+        assert!(
+            err.to_string().contains(super::ALLOW_INSECURE_HTTP_ENV),
+            "error should spell the override env var with underscores: {}",
+            super::ALLOW_INSECURE_HTTP_ENV
+        );
     }
 
     #[test]

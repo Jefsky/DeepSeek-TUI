@@ -221,7 +221,8 @@ fallbacks after saved config and keyring credentials:
 
 Add a list of additional system-prompt sources that get
 concatenated, in declared order, alongside the auto-loaded
-`AGENTS.md`:
+`AGENTS.md` (project root and parent directories; see also
+`~/.deepseek/AGENTS.md` below).
 
 ```toml
 instructions = [
@@ -243,6 +244,12 @@ Rules:
   If you want both, list `~/global.md` inside the project
   array. Set `instructions = []` in the project to clear the
   user list for that repo.
+
+**Global `~/.deepseek/AGENTS.md` (#1157):** If this file exists, its contents are
+**prepended** to automatically loaded project instructions (with a `---`
+separator) when a workspace or parent-directory `AGENTS.md` (or other
+project context file) is found. If the workspace has no project
+instructions file, the global file is loaded on its own.
 
 ### `/hooks` listing
 
